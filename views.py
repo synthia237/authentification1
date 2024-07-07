@@ -21,7 +21,6 @@ import urllib.request
 import shutil
 from django.http import StreamingHttpResponse, HttpResponseServerError
 from django.views.decorators import gzip
-from django.contrib.auth.hashers import check_password
 
 
 
@@ -58,7 +57,7 @@ def register(request):
             image_file = request.FILES['image']
             fs = FileSystemStorage(location=image_directory)
             fs.save(image_file.name, image_file)
-            return redirect('sucess')
+            return redirect('validate')
     else:
         form = RegistrationForm()
 
@@ -137,98 +136,12 @@ def profile(request):
     return render(request, "profile.html")
 
 #@csrf_exempt
-def examen(request):
-    """
-    # Function to load images and encodings from the training images directory
-    def load_known_images():
-            known_encodings = []
-            known_names = []
 
-        # Path to the training images directory
-            training_images_dir = os.path.join('media')
 
-        # Loop through each subdirectory in the training images directory
-            for person_dir in os.listdir(training_images_dir):
-                person_name = person_dir if request.method == 'POST':
-        form=RegistrationForm(request.POST)
-
-            # Loop through each image in the person's subdirectory
-            for image_file in os.listdir(os.path.join(training_images_dir, person_dir)):
-                image_path = os.path.join(training_images_dir, person_dir, image_file)
-
-                # Load the image and compute the face encoding
-                image = face_recognition.load_image_file(image_path)
-                encoding = face_recognition.face_encodings(image)[0]
-
-                # Append the encoding and name to the lists
-                known_encodings.append(encoding)
-                known_names.append(person_name)
-
-    return known_encodings, known_names
-
-    # Load the known images and encodings
-    known_encodings, known_names = load_known_images()
-
-    # Initialize the webcam
-    video_capture = cv2.VideoCapture(0)
-
-    # Load the Haar cascade classifier for face detection
-    face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-
-    while True:
-        # Capture frame-by-frame from the webcam
-        ret, frame = video_capture.read()
-
-        # Convert the frame to grayscale for face detection
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-
-        # Detect faces using the Haar cascade classifier
-        faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
-
-        # Loop through each face found in the frame
-        for (x, y, w, h) in faces:
-            # Crop the face region from the frame
-            face_image = frame[y:y+h, x:x+w]
-
-            # Resize the face image for better recognition performance
-            face_image = cv2.resize(face_image, (0, 0), fx=0.25, fy=0.25)
-
-            # Find the face encodings in the resized face image
-            face_encodings = face_recognition.face_encodings(face_image)
-
-            # Loop through each face encoding found in the resized face image
-            for face_encoding in face_encodings:
-                # Compare the face encoding with the known encodings
-                matches = face_recognition.compare_faces(known_encodings, face_encoding)
-                name = "Unknown"
-
-                # If there is a match, find the index in known_encodings
-                if True in matches:
-                    match_index = matches.index(True)
-                    name = known_names[match_index]
-
-                # Draw a rectangle around the face and display the name
-                cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
-                cv2.putText(frame, name, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
-
-        # Display the resulting frame
-        cv2.imshow('Real-time Facial Recognition', frame)
-
-        # Exit the loop if 'q' is pressed
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
-    
-    # Release the webcam and close all windows
-        video_capture.release()
-        cv2.destroyAllWindows() 
-        """
-        
-    return render(request, 'examens.html')
     
     
 
-def enseignant(request):
-    return render(request, "enseignants.html")
+
 
 def playlist(request):
     return render(request, "playlist.html")
@@ -244,7 +157,7 @@ def connexion(request):
             password = form.cleaned_data.get('mot_de_passe')
             
             customUser = CustomUser.objects.filter(email=email).first()
-            if customUser and check_password(password, customUser.password):
+            if customUser and customUser.check_password(password):  # Utilisation de la méthode check_password
                 # Logique de connexion ici
                 return redirect('home')
             else:
@@ -253,6 +166,7 @@ def connexion(request):
         form = ConnexionForm()
     
     return render(request, 'connexion.html', {'form': form})
+
 
 
 def upload_photo(request):
@@ -277,7 +191,14 @@ def upload_photo(request):
     # Si la requête n'est pas de type POST
     return JsonResponse({'error': 'La méthode HTTP doit être POST.'}, status=400)
 
+def examen(request):
+    frames = generate_frames()
+    is_user_recognized = next(frames)  # Obtenir le statut de reconnaissance de l'utilisateur
 
+    if is_user_recognized:
+        return render(request, 'examens.html', {'frames': frames, 'is_user_recognized': is_user_recognized})
+    else:
+        return redirect('home')
 
 # Charger le classificateur Haar Cascade pour la détection de visages
 def load_known_faces():
@@ -302,16 +223,19 @@ def load_known_faces():
                 known_names.append(person_name)
 
     return known_encodings, known_names
+
 # Chargement des visages connus au démarrage du serveur
 known_encodings, known_names = load_known_faces()
 
 # Initialisation de la capture vidéo avec OpenCV
-cap = cv2.VideoCapture(1)
+cap = cv2.VideoCapture(0)
 
 # Initialisation du classificateur de détection de visages Haar Cascade
 face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
 
 def generate_frames():
+    is_user_recognized = False  # Initialisation de la variable is_user_recognized à False
+    
     while True:
         ret, frame = cap.read()
         if not ret:
@@ -343,7 +267,9 @@ def generate_frames():
                         match_index = matches.index(True)
                         name = known_names[match_index]
                         
-                         
+                        if name != "Inconnu":
+                            is_user_recognized = True  # Mettre à jour la valeur de is_user_recognized à True
+                            
                     # Dessiner un rectangle autour du visage et afficher le nom
                     cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
                     cv2.putText(frame, name, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
@@ -352,16 +278,32 @@ def generate_frames():
             # Conversion de l'image en format JPEG pour le streaming
             ret, buffer = cv2.imencode('.jpg', frame)
             frame = buffer.tobytes()
+            
             yield (b'--frame\r\n'
                    b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+                   
+    yield is_user_recognized  # Ajout du statut de reconnaissance de l'utilisateur
 
 # Utilisation de gzip pour compresser les données vidéo en streaming
 @gzip.gzip_page
 def video_feed(request):
     try:
-        return StreamingHttpResponse(generate_frames(), content_type='multipart/x-mixed-replace; boundary=frame')
+        frames = generate_frames()
+        is_user_recognized = next(frames)  # Obtenir le statut de reconnaissance de l'utilisateur
+        
+        if is_user_recognized:
+            return StreamingHttpResponse(frames, content_type='multipart/x-mixed-replace; boundary=frame')
+        else:
+            return redirect('home')
+            
+      
     except HttpResponseServerError as e:
         print("HTTP Response Error")
-
 def indexe(request):
     return render(request, 'index.html')
+    
+def enseignant(request):
+    return render(request, 'enseignants.html')
+
+def exam(request):
+    return render(request, 'exam.html')

@@ -9,20 +9,20 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 
 
 class CustomUserManager(BaseUserManager):
-    def create_user(self, email, password=None, nom=None, image=None):
-        if not email:
-            raise ValueError("L'adresse e-mail est requise")
+ def create_user(self, email, password=None, nom=None, image=None):
+    if not email:
+        raise ValueError("L'adresse e-mail est requise")
 
-        user = self.model(email=self.normalize_email(email), nom=nom, image=image)
-        user.set_password(password)
-        user.save(using=self._db)
-        return user
+    user = self.model(email=self.normalize_email(email), nom=nom, image=image)
+    user.set_password(password)  # Hachage du mot de passe
+    user.save(using=self._db)
+    return user
 
-    def create_superuser(self, email, password, nom=None, image=None):
-        user = self.create_user(email, password, nom, image)
-        user.is_admin = True
-        user.save(using=self._db)
-        return user
+def create_superuser(self, email, password, nom=None, image=None):
+    user = self.create_user(email, password, nom, image)
+    user.is_admin = True
+    user.save(using=self._db)
+    return user
 
 
 class CustomUser(AbstractBaseUser):
@@ -62,6 +62,8 @@ class Code(models.Model):
     
     def __str__(self):
         return self.code
+
+
 
 
 
