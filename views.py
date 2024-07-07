@@ -21,6 +21,7 @@ import urllib.request
 import shutil
 from django.http import StreamingHttpResponse, HttpResponseServerError
 from django.views.decorators import gzip
+from django.contrib.auth.hashers import check_password
 
 
 
@@ -243,7 +244,7 @@ def connexion(request):
             password = form.cleaned_data.get('mot_de_passe')
             
             customUser = CustomUser.objects.filter(email=email).first()
-            if customUser and customUser.password == password:
+            if customUser and check_password(password, customUser.password):
                 # Logique de connexion ici
                 return redirect('home')
             else:
@@ -252,7 +253,6 @@ def connexion(request):
         form = ConnexionForm()
     
     return render(request, 'connexion.html', {'form': form})
-
 
 
 def upload_photo(request):
@@ -306,7 +306,7 @@ def load_known_faces():
 known_encodings, known_names = load_known_faces()
 
 # Initialisation de la capture vidéo avec OpenCV
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(1)
 
 # Initialisation du classificateur de détection de visages Haar Cascade
 face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
