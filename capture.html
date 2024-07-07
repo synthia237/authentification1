@@ -1,5 +1,5 @@
 
-{% load static %}
+<!--{% load static %}
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -25,7 +25,8 @@
         
   <button class="btn btn-primary" id="capture-btn">Prendre une photo </button>
   </div>
-   
+
+
            <script>
                  const getCookie = (name) => {
   let cookieValue = null;
@@ -88,7 +89,9 @@
   .then(response => response.json())
   .then(data => {
     console.log('Image téléchargée avec succès !');
-     window.location.href='/verification/'
+    stopVideoCapture(); // Arrêter la capture vidéo avant de passer à la page d'examen
+  window.location.href = '/verification/'; // Rediriger vers la page d'examen
+     
   })
   .catch(error => {
     console.error('Erreur lors du téléchargement de l\'image :', error);
@@ -110,6 +113,17 @@
   }
 
   return new File([u8arr], filename, { type: mime });
+}
+
+function stopVideoCapture() {
+  const video = document.getElementById('video-element');
+  const stream = video.srcObject;
+
+  if (stream) {
+    const tracks = stream.getTracks();
+    tracks.forEach(track => track.stop());
+    video.srcObject = null;
+  }
 }
 
       

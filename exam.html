@@ -1,0 +1,10 @@
+
+
+{% block content %}
+<h1>Examen</h1>
+<form method="post">
+    {% csrf_token %}
+    <!-- Ajoutez les questions de l'examen ici -->
+    <button type="submit">Soumettre</button>
+</form>
+{% endblock %}

@@ -48,8 +48,8 @@
         <img src="{% static 'mysite/image/pic.webp' %}" class="image" alt="">
         <a href="{% url 'profile' %}" class="btn">voir profil</a>
          <div class="flex-btn">
-            <a href="{% url 'connexion' %}" class="option-btn">Connexion</a>
-            <a href="{% url 'register' %}l" class="option-btn">Inscription</a>
+            <a href="{% url 'connexion' %}" class="option-btn">Deconnexion</a>
+            <a href="{% url 'register' %}l" class="option-btn">Inscriptione</a>
          </div>
       </div>
 
@@ -71,7 +71,7 @@
    <nav class="navbar">
     <a href="{% url 'home' %}"><i class="fas fa-home"></i><span>Accueil</span></a>
     <a href="{% url 'examen' %}"><i class="fas fa-graduation-cap"></i><span>Examens</span></a>
-    <a href="teachers.html"><i class="fas fa-chalkboard-user"></i><span>Enseignants</span></a>
+    <a href="{% url 'enseignant' %}"><i class="fas fa-chalkboard-user"></i><span>Enseignants</span></a>
     <a href="contact.html"><i class="fas fa-headset"></i><span>Contactez-nous</span></a>
    </nav>
 
@@ -83,12 +83,20 @@
    
    <img id="video_feed" src="{% url 'video_feed' %}" width="800" height="500" />
    
-   {% if personne_reconnue %}
-   <form action="{% url 'passer_examen' %}" method="post">
-       {% csrf_token %}
-       <input type="submit" value="Passer l'examen">
-   </form>
-{% endif %}
+   {% if is_user_recognized %}
+   <script>
+      setTimeout(function() {
+        window.location.href = "{% url 'exam' %}";
+      }, 15000);
+   </script>
+   {% else %}
+   <script>
+      setTimeout(function() {
+        window.location.href = "{% url 'home' %}";
+      }, 15000);
+   </script>
+   {% endif %}
+
    
    </div>
      
